@@ -1,18 +1,35 @@
-name: Build project and deploy to SmarterASP.NET
+name: Build, publish and deploy project to Simply
+
 on: [push]
 
 jobs:
   build_and_deploy:
-    name: Build package and deploy to SmarterASP.NET
     runs-on: windows-latest
     steps:
-      - name: build file
-        uses: actions/checkout@v1
+      - uses: actions/checkout@v1
 
-      - name: Sync files
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4.0.0
         with:
-          server: win6055.site4now.net
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          dotnet-version: 8.0
           
+      - name: Install dependencies
+        run: dotnet restore
+        
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish
+        
+      - name: Test with .NET
+        run: dotnet test
+
+      - name: Deploy to Simply        
+        uses: talunzhang/SmarterASP.NET-web-deploy@v1.0.1
+        with:
+          website-name: ${{ secrets.WEBSITE_NAME }}
+          server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
+          server-username: ${{ secrets.SERVER_USERNAME }}
+          server-password: ${{ secrets.SERVER_PASSWORD }}
+          source-path: '\projet-x\'
